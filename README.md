@@ -1,7 +1,7 @@
 #  Chatter:ledger:
 ## :white_check_mark: Purpose
 
-An Reactive Native app that provide users with a chat interface and options to share images and their location.
+An React Native app that provide users with a chat interface and options to share images and their location.
 
 ## :white_check_mark: Key Features
 Chatter  App has the following features,
