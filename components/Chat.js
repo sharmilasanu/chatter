@@ -83,8 +83,3 @@ export default class Chat extends React.Component {
   }
 }
 
-const styles = StyleSheet.create({
-	giftedChat: {
-		color: '#000',
-	},
-});
