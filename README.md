@@ -17,11 +17,11 @@ and location data
 
 
 ## :white_check_mark: Tools
-1.Node.js
-1.React Native
-1.Expo
-1.Google Firebase
-1.Gifted chat
+Node.js
+React Native
+Expo
+Google Firebase
+Gifted chat
 
 
 
