@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 // firebase | firestore
-import firebase from 'firebase';
+import * as firebase from 'firebase';
 import 'firebase/firestore';
 
 export default class Chat extends React.Component {
@@ -30,27 +30,27 @@ export default class Chat extends React.Component {
             messagingSenderId: "902194494688",
             appId: "1:902194494688:web:0cbd4469596de46c9fa485"
         };
-        
+
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
-          
+
         }
-       
+
         this.referenceChatMessages = firebase.firestore().collection("messages");
-        
+
     }
     componentDidMount() {
-       
+
         let name = this.props.route.params.user
         if (name === '') name = 'UNNAMED'
         this.props.navigation.setOptions({ title: name })
 
          // firebase user authentication
-        this.authUnsubscribe = firebase.auth().onAuthStateChanged((user) => {
+        this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
             if (!user) {
-                  firebase.auth().signInAnonymously();
-                  
+                await firebase.auth().signInAnonymously();
             }
+
             this.setState({
                 uid: user.uid,
                 messages: [],
@@ -60,35 +60,19 @@ export default class Chat extends React.Component {
                     avatar: 'https://placeimg.com/140/140/any',
                 },
             });
+
             this.unsubscribe = this.referenceChatMessages
                 .orderBy("createdAt", "desc")
                 .onSnapshot(this.onCollectionUpdate);
+
         });
     }
     componentWillUnmount() {
-      //Stops listening to authentication and collection changes
-     
-          this.authUnsubscribe();
-          this.unsubscribe();
-      
-  }
-    addMessage() {
-        const message = this.state.messages[0];
-        this.referenceChatMessages.add({
-            uid: this.state.uid,
-            _id: message._id,
-            text: message.text || '',
-            createdAt: message.createdAt,
-            user: this.state.user,
+        //Stops listening to authentication and collection changes
+        this.authUnsubscribe();
+        this.unsubscribe();
+    }
 
-        })
-    }
-    onSend(messages = []) {
-        this.setState(previousState => ({
-            messages: GiftedChat.append(previousState.messages, messages),
-        }))
-        this.addMessage()
-    }
     onCollectionUpdate = (querySnapshot) => {
         const messages = [];
         // go through each document
@@ -96,76 +80,84 @@ export default class Chat extends React.Component {
             // get the QueryDocumentSnapshot's data
             let data = doc.data();
             messages.push({
-                _id: data._id,
+                _id: data._id || 1,
                 text: data.text,
                 createdAt: data.createdAt.toDate(),
                 user: data.user
             });
         });
+
         this.setState({
-			messages: messages,
-		});
+            messages: messages,
+        });
+    }
+
+
+    addMessage() {
+        const message = this.state.messages[0];
+        this.referenceChatMessages.add({
+            _id: message._id,
+            text: message.text,
+            createdAt: message.createdAt,
+            user: this.state.user
+        })
+    }
+    onSend(messages = []) {
+        this.setState(previousState => ({
+            messages: GiftedChat.append(previousState.messages, messages),
+        }), () => {
+            this.addMessage();
+        });
     }
     renderBubble = (props) => {
-        return ( <
-            Bubble {
-                ...props
-            }
-            wrapperStyle = {
-                {
+        return (
+            <Bubble
+                {...props}
+                wrapperStyle={{
                     right: {
                         backgroundColor: '#444941',
                     },
                     left: {
                         backgroundColor: '#CCD1E4',
                     }
-                }
-            }
-            textStyle = {
-                {
+                }}
+                textStyle={{
                     right: {
                         color: 'white',
                     },
                     left: {
                         color: 'black',
                     }
-                }
-            }
+                }}
             />
-        )
+        );
     }
-    
-render() {
-   
-    let bgcolor = this.props.route.params.Color
-    // let { name } = this.props.route.params;
 
-   
-    return ( 
-    <View style = {
-            {
+    render() {
+        let user = this.props.route.params.user; // OR ...
+        let bgcolor = this.props.route.params.Color
+        // let { name } = this.props.route.params;
+
+        this.props.navigation.setOptions({
+            title: user
+        });
+        return ( 
+            <View style={{
                 flex: 1,
                 backgroundColor: bgcolor,
                 color: '#000'
-            }
-        } >
-        <
-        GiftedChat 
-        renderBubble={this.renderBubble.bind(this)}
-        messages = {
-            this.state.messages
-        }
-        onSend = {
-            messages => this.onSend(messages)
-        }
-        user={{
+            }}>
+
+                <GiftedChat
+                    renderBubble={this.renderBubble.bind(this)}
+                    messages={this.state.messages}
+                    onSend={messages => this.onSend(messages)}
+                    user={{
                         _id: this.state.user._id,
-                        name: this.state.user.name,
-                        avatar: this.state.user.avatar
-                    }}
-        /> {
-        Platform.OS === 'android' ? < KeyboardAvoidingView behavior = "height" / > : null
-    } </View>
-)
-}
+                        name: user,
+                    }} />
+                {Platform.OS === 'android' ? < KeyboardAvoidingView behavior="height" /> : null}
+            </View>
+        )
+    }
 }
